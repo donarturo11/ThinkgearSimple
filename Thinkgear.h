@@ -1,31 +1,9 @@
 #pragma once
 
-//#include "SerialPort.h"
+#include "SerialPortInterface.h"
 #include "ThinkGearStreamParser.h"
 #include "ThinkgearCommsDriver.h"
 #include <string>
-
-class SerialPort
-{
-public:
-    SerialPort(){}
-    ~SerialPort(){}
-    bool setup(std::string portName, int baudrate){ return true; }
-    void open(){}
-    void close(){}
-    void flush(){}
-    int available(){ return 0; }
-    long readBytes(unsigned char * buffer, size_t length){ return 0; }
-	long readBytes(char * buffer, size_t length){ return 0; }
-    int readByte(){ return 0; }
-    
-    long writeBytes(const unsigned char * buffer, size_t length){ return 0; }
-	long writeBytes(const char * buffer, size_t length){ return 0; }
-    bool writeByte(unsigned char singleByte){ return true; }
-	bool writeByte(char singleByte){ return true; }
-};
-
-class SerialPortInfo;
 
 /*
  ofxThinkgear
@@ -92,7 +70,7 @@ public:
     
     
     //bool notifyOnRaw;
-    SerialPort* device;
+    SerialPortInterface* device;
     ThinkgearEventArgs values;
     bool isReady;
     /*

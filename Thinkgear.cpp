@@ -158,7 +158,7 @@ void Thinkgear::tgHandleCommsDriverDataValueFunc(int code, float value) {
 
 Thinkgear::Thinkgear() : isReady(false) {
     
-    device = new SerialPort();
+    //device = new SerialPortInterface();
     // print all devices to console
     //device->listDevices();
     allowRawDataEvents = false;
@@ -275,7 +275,7 @@ void Thinkgear::update(){
                 delete device;
                 device = NULL;
                 
-                SerialPort* retryDevice = new SerialPort();
+                SerialPortInterface* retryDevice; //= new SerialPortInterface();
                 device = retryDevice;
             }
         }
