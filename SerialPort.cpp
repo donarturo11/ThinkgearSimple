@@ -238,7 +238,7 @@ void SerialPort::enumerateDevices(){
 }
 
 //----------------------------------------------------------------
-void Serial::close(){
+void SerialPort::close(){
 
 	#ifdef TARGET_WIN32
 
@@ -253,7 +253,7 @@ void Serial::close(){
 
 		if(bInited){
 			tcsetattr(fd, TCSANOW, &oldoptions);
-			::close(fd);
+			//Buffer::close(fd);
 			bInited = false;
 		}
 		// [CHECK] -- anything else need to be reset?
@@ -272,7 +272,7 @@ bool SerialPort::setup(int deviceNumber, int baud){
 	if(deviceNumber < (int)devices.size()){
 		return setup(devices[deviceNumber].devicePath, baud);
 	} else {
-		ofLogError("ofSerial") << "couldn't find device " << deviceNumber << ", only " << devices.size() << " devices found";
+		std::cerr << "couldn't find device " << deviceNumber << ", only " << devices.size() << " devices found";
 		return false;
 	}
 
@@ -292,7 +292,7 @@ bool SerialPort::setup(string portName, int baud){
 		std::cout << "opening " << portName << " @ " << baud << " bps" << std::endl;
 		fd = open(portName.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
 		if(fd == -1){
-			ofLogError("ofSerial") << "unable to open " << portName;
+			std::cerr << "unable to open " << portName;
 			return false;
 		}
 
@@ -403,7 +403,7 @@ bool SerialPort::setup(string portName, int baud){
 							OPEN_EXISTING, 0, 0);
 
 		if(hComm == INVALID_HANDLE_VALUE){
-			ofLogError("ofSerial") << "setup(): unable to open " << portName;
+			std::cerr << "setup(): unable to open " << portName;
 			return false;
 		}
 
@@ -419,14 +419,14 @@ bool SerialPort::setup(string portName, int baud){
 		swprintf(buf, L"baud=%d parity=N data=8 stop=1", bps);
 
 		if(!BuildCommDCBW(buf, &cfg.dcb)){
-			ofLogError("ofSerial") << "setup(): unable to build comm dcb, (" << buf << ")";
+			std::cerr << "setup(): unable to build comm dcb, (" << buf << ")";
 		}
 
 		// Set baudrate and bits etc.
 		// Note that BuildCommDCB() clears XON/XOFF and hardware control by default
 
 		if(!SetCommState(hComm, &cfg.dcb)){
-			ofLogError("ofSerial") << "setup(): couldn't set comm state: " << cfg.dcb.BaudRate << " bps, xio " << cfg.dcb.fInX << "/" << cfg.dcb.fOutX;
+			std::cerr << "setup(): couldn't set comm state: " << cfg.dcb.BaudRate << " bps, xio " << cfg.dcb.fInX << "/" << cfg.dcb.fOutX;
 		}
 		//ofLogNotice("ofSerial") << "bps=" << cfg.dcb.BaudRate << ", xio=" << cfg.dcb.fInX << "/" << cfg.dcb.fOutX;
 
@@ -446,7 +446,7 @@ bool SerialPort::setup(string portName, int baud){
 
 	#else
 
-		ofLogError("ofSerial") << "not implemented in this platform";
+		std::cerr << "not implemented in this platform";
 		return false;
 
 	#endif
@@ -456,8 +456,8 @@ bool SerialPort::setup(string portName, int baud){
 //----------------------------------------------------------------
 long SerialPort::writeBytes(const char * buffer, size_t length){
 	if(!bInited){
-		ofLogError("ofSerial") << "writeBytes(): serial not inited";
-		return OF_SERIAL_ERROR;
+		std::cerr << "writeBytes(): serial not inited";
+		return SERIAL_ERROR;
 	}
 
 	#if defined( TARGET_OSX ) || defined( TARGET_LINUX )
@@ -468,7 +468,7 @@ long SerialPort::writeBytes(const char * buffer, size_t length){
 			auto n = write(fd, buffer + written, length - written);
 			if (n < 0 && (errno == EAGAIN || errno == EINTR)) n = 0;
 			//printf("Write, n = %d\n", n);
-			if (n < 0) return OF_SERIAL_ERROR;
+			if (n < 0) return SERIAL_ERROR;
 			if (n > 0) {
 				written += n;
 			} else {
@@ -478,7 +478,7 @@ long SerialPort::writeBytes(const char * buffer, size_t length){
 				FD_SET(fd, &wfds);
 				n = select(fd+1, NULL, &wfds, NULL, &tv);
 				if (n < 0 && errno == EINTR) n = 1;
-				if (n <= 0) return OF_SERIAL_ERROR;
+				if (n <= 0) return SERIAL_ERROR;
 			}
 		}
 		return written;
@@ -487,7 +487,7 @@ long SerialPort::writeBytes(const char * buffer, size_t length){
 		DWORD written;
 		if(!WriteFile(hComm, buffer, length, &written,0)){
 			 std::cerr << "writeBytes(): couldn't write to port\n";
-			 return OF_SERIAL_ERROR;
+			 return SERIAL_ERROR;
 		}
 		ofLogVerbose("ofSerial") <<  "wrote " << (int) written << " bytes";
 		return (int)written;
@@ -510,15 +510,15 @@ bool SerialPort::writeByte(char singleByte){
 }
 
 //----------------------------------------------------------------
-long SerialPort::writeBytes(const ofBuffer & buffer){
+long SerialPort::writeBytes(const Buffer & buffer){
 	return writeBytes(buffer.getData(),buffer.size());
 }
 
 //----------------------------------------------------------------
 long SerialPort::readBytes(char * buffer, size_t length){
 	if (!bInited){
-		ofLogError("ofSerial") << "readBytes(): serial not inited";
-		return OF_SERIAL_ERROR;
+		std::cerr << "readBytes(): serial not inited";
+		return SERIAL_ERROR;
 	}
 
 	#if defined( TARGET_OSX ) || defined( TARGET_LINUX )
@@ -527,8 +527,8 @@ long SerialPort::readBytes(char * buffer, size_t length){
 		if(nRead < 0){
 			if ( errno == EAGAIN )
 				return OF_SERIAL_NO_DATA;
-			ofLogError("ofSerial") << "readBytes(): couldn't read from port: " << errno << " " << strerror(errno);
-			return OF_SERIAL_ERROR;
+			std::cerr << "readBytes(): couldn't read from port: " << errno << " " << strerror(errno);
+			return SERIAL_ERROR;
 		}
 		return nRead;
 
@@ -536,14 +536,14 @@ long SerialPort::readBytes(char * buffer, size_t length){
 
 		DWORD nRead = 0;
 		if (!ReadFile(hComm, buffer, length, &nRead, 0)){
-			ofLogError("ofSerial") << "readBytes(): couldn't read from port";
-			return OF_SERIAL_ERROR;
+			std::cerr << "readBytes(): couldn't read from port";
+			return SERIAL_ERROR;
 		}
 		return (int)nRead;
 
 	#else
 
-		ofLogError("ofSerial") << "not defined in this platform";
+		std::cerr << "not defined in this platform";
 		return -1;
 
 	#endif
@@ -555,7 +555,7 @@ long SerialPort::readBytes(unsigned char * buffer, size_t length){
 }
 
 //----------------------------------------------------------------
-long SerialPort::readBytes(ofBuffer & buffer, size_t length){
+long SerialPort::readBytes(Buffer & buffer, size_t length){
 	buffer.allocate(length);
 	return readBytes(buffer.getData(),length);
 }
@@ -573,7 +573,7 @@ bool SerialPort::writeByte(unsigned char singleByte){
 int SerialPort::readByte(){
 	if(!bInited){
 		std::cerr << "readByte(): serial not inited\n";
-		return OF_SERIAL_ERROR;
+		return SERIAL_ERROR;
 	}
 
 	unsigned char tmpByte = 0;
@@ -586,7 +586,7 @@ int SerialPort::readByte(){
 				return SERIAL_NO_DATA;
 			}
 			std::cerr << "readByte(): couldn't read from port: " << errno << " " << strerror(errno) << std::endl;
-			return OF_SERIAL_ERROR;
+			return SERIAL_ERROR;
 		}
 
 		if(nRead == 0){
@@ -598,7 +598,7 @@ int SerialPort::readByte(){
 		DWORD nRead;
 		if(!ReadFile(hComm, &tmpByte, 1, &nRead, 0)){
 			std::cerr << "readByte(): couldn't read from port\n";
-			return OF_SERIAL_ERROR;
+			return SERIAL_ERROR;
 		}
 	
 		if(nRead == 0){
@@ -608,7 +608,7 @@ int SerialPort::readByte(){
 	#else
 
 		std::cerr << "not defined in this platform\n";
-		return OF_SERIAL_ERROR;
+		return SERIAL_ERROR;
 
 	#endif
 
@@ -661,7 +661,7 @@ void SerialPort::drain(){
 int SerialPort::available(){
 	if(!bInited){
 		std::cerr << "available(): serial not inited";
-		return OF_SERIAL_ERROR;
+		return SERIAL_ERROR;
 	}
 
 	int numBytes = 0;
@@ -691,6 +691,6 @@ int SerialPort::available(){
 	return numBytes;
 }
 
-bool Serial::isInitialized() const{
+bool SerialPort::isInitialized() const{
 	return bInited;
 }

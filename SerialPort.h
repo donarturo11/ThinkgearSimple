@@ -1,10 +1,8 @@
 #pragma once
 
 #include <climits>
-
-#if defined( TARGET_OSX ) || defined( TARGET_LINUX ) || defined (TARGET_ANDROID)
-	#include <termios.h>
-#else
+#include <iostream>
+#ifdef _WIN32
 	#include <winbase.h>
 	#include <tchar.h>
 	#include <iostream>
@@ -20,26 +18,28 @@
 		#define INITGUID
 		#include <initguid.h> // needed for dev-c++ & DEFINE_GUID
 	#endif*/
+#else
+#include <termios.h>
 #endif
 
 // serial error codes
 #define SERIAL_NO_DATA 	-2
 #define SERIAL_ERROR		-1
 
-
+class Buffer;
 
 /// \brief Describes a Serial device, including ID, name and path.
 class SerialPortDeviceInfo{
 	friend class Serial;
 
 	public:
-		SerialDeviceInfo(std::string devicePathIn, std::string deviceNameIn, int deviceIDIn){
+		SerialPortDeviceInfo(std::string devicePathIn, std::string deviceNameIn, int deviceIDIn){
 			devicePath = devicePathIn;
 			deviceName = deviceNameIn;
 			deviceID = deviceIDIn;
 		}
 
-		SerialDeviceInfo(){
+		SerialPortDeviceInfo(){
 			deviceName = "device undefined";
 			deviceID   = -1;
 		}
@@ -140,7 +140,7 @@ public:
 	///		 int result = serial.readBytes( &bytes[bytesArrayOffset], bytesRemaining );
 	///
 	///		 // check for error code
-	///		 if ( result == OF_SERIAL_ERROR ){
+	///		 if ( result == SERIAL_ERROR ){
 	///			 // something bad happened
 	///			 ofLog( OF_LOG_ERROR, "unrecoverable error reading from serial" );
 	///			 break;
@@ -159,7 +159,7 @@ public:
 	/// need to do some bit manipulation to correctly interpret that values.
 	long readBytes(unsigned char * buffer, size_t length);
 	long readBytes(char * buffer, size_t length);
-	long readBytes(ofBuffer & buffer, size_t length);
+	long readBytes(Buffer & buffer, size_t length);
 
 	/// \brief Reads and returns a single byte from the requested device.
 	///
@@ -171,7 +171,7 @@ public:
 	///
 	/// if ( myByte == OF_SERIAL_NO_DATA ){
 	///	 printf("no data was read");
-	/// } else if ( myByte == OF_SERIAL_ERROR ){
+	/// } else if ( myByte == SERIAL_ERROR ){
 	///	 printf("an error occurred");
 	/// } else {
 	///	 printf("myByte is %d", myByte);
@@ -179,7 +179,7 @@ public:
 	/// ~~~~
 	///
 	/// \returns The single byte as integer. If there is no data it will return
-	/// `OF_SERIAL_NO_DATA`, and on error it returns `OF_SERIAL_ERROR`
+	/// `OF_SERIAL_NO_DATA`, and on error it returns `SERIAL_ERROR`
 	int readByte();
 
 	/// \}
@@ -194,7 +194,7 @@ public:
 	/// ~~~~
 	long writeBytes(const unsigned char * buffer, size_t length);
 	long writeBytes(const char * buffer, size_t length);
-	long writeBytes(const ofBuffer & buffer);
+	long writeBytes(const Buffer & buffer);
 
 	/// \brief Writes a single byte to the connected serial device.
 	///
@@ -242,7 +242,7 @@ protected:
 	bool bHaveEnumeratedDevices;  ///\< \brief Indicate having enumerated devices (serial ports) available.
 	bool bInited;  ///\< \brief Indicate the successful initialization of the serial connection.
 
-#ifdef TARGET_WIN32
+#ifdef _WIN32
 
 	/// \brief Enumerate all serial ports on Microsoft Windows.
 	///
