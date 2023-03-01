@@ -1,11 +1,12 @@
 #include <cstdio>
+#include <iostream>
 #include "Thinkgear.h"
 
 
 // stream parser callback
-// check code definitions in ThinkGearStreamParser.h
+// check code definitions in ThinkgearStreamParser.h
 void tgHandleStreamDataValueFunc( unsigned char extendedCodeLevel, unsigned char code, unsigned char valueLength, const unsigned char *value, void *customData){
-    ThinkGear& tg = *reinterpret_cast<ThinkGear*>(customData);
+    Thinkgear& tg = *reinterpret_cast<Thinkgear*>(customData);
     if (extendedCodeLevel == 0){
         //if(code != PARSER_CODE_RAW_SIGNAL) printf("%#x\n",code);//, code, code, code);
         //std::cout << extendedCodeLevel;
@@ -32,11 +33,11 @@ void tgHandleStreamDataValueFunc( unsigned char extendedCodeLevel, unsigned char
                 //ofNotifyEvent(tg.onBlinkStrength, tg.values);
             case( 0xd4 ):
                 // printf("Standby... autoconnecting\n");
-                if(tg.allowRawDataEvents) ofNotifyEvent(tg.onConnecting, tg.values);
+                if(tg.allowRawDataEvents)//ofNotifyEvent(tg.onConnecting, tg.values);
                 tg.device->writeByte((unsigned char) 0xc2); // what is this?
                 break;
             case( 0xd0 ):
-                ofNotifyEvent(tg.onReady, tg.values);
+               //ofNotifyEvent(tg.onReady, tg.values);
                 break;
             case( 0xd1 ):
                 {
@@ -46,7 +47,7 @@ void tgHandleStreamDataValueFunc( unsigned char extendedCodeLevel, unsigned char
                 break;
             case PARSER_CODE_RAW_SIGNAL:
                 tg.values.raw = (value[0] << 8) | value[1];
-                ofNotifyEvent(tg.onRaw, tg.values);
+                //ofNotifyEvent(tg.onRaw, tg.values);
                 break;
             case PARSER_CODE_ASIC_EEG_POWER_INT:
                 {
@@ -77,7 +78,7 @@ void tgHandleStreamDataValueFunc( unsigned char extendedCodeLevel, unsigned char
                     std::cout << "b: " << tg.values.eegLowBeta << std::endl;
                     std::cout << "b: " << tg.values.eegHighBeta << std::endl;
                     std::cout << "b: " << tg.values.eegLowGamma << std::endl;
-                    std::cout << "b: " << tg.values.eegMidGamma << std::endl;
+                    //std::cout << "b: " << tg.values.eegMidGamma << std::endl;
                     std::cout << "\n";
                     //ofNotifyEvent(tg.onEeg, tg.values);
                     break;
@@ -157,9 +158,9 @@ void Thinkgear::tgHandleCommsDriverDataValueFunc(int code, float value) {
 
 Thinkgear::Thinkgear() : isReady(false) {
     
-    device = new ofSerial();
+    device = new SerialPort();
     // print all devices to console
-    device->listDevices();
+    //device->listDevices();
     allowRawDataEvents = false;
     parserSetup = false;
     attempts = 0;
@@ -173,7 +174,7 @@ Thinkgear::~Thinkgear(){
     close();
 }
 
-void Thinkgear::setup(string deviceName, int baudRate, ThinkGearImplementation connectionType) {
+void Thinkgear::setup(std::string deviceName, int baudRate, ThinkgearImplementation connectionType) {
     this->deviceName = deviceName;
     this->baudRate = baudRate;
     this->connectionType = connectionType;
@@ -213,7 +214,7 @@ void Thinkgear::idle() {
             int n = device->available();
             if (n > 0){
                 //unavailableCount = 0;
-                n = device->readBytes(buffer, min(n,512));
+                n = device->readBytes(buffer, std::min(n,512));
             }
         }
     }
@@ -230,7 +231,7 @@ void Thinkgear::update(){
             std::cerr << "connecting to device...\n";
             attempts++;
             if(driver.connect()) {
-                std::cerr << "ThinkGear device setup\n";
+                std::cerr << "Thinkgear device setup\n";
                 attempts = 0;
             }
         }
@@ -238,15 +239,15 @@ void Thinkgear::update(){
         
     } else if(connectionType == TG_STREAM_PARSER) {
         
-        if (!isReady && ofGetFrameNum() % noConnectionRestartCount == 0){
+        if (!isReady && 512 /* temporarly */ % noConnectionRestartCount == 0){
             std::cerr << "connecting to device...\n";
             attempts++;
             if (device->setup(deviceName, baudRate)){
                 device->flush();
                 int parserInited = THINKGEAR_initParser(&parser, PARSER_TYPE_PACKETS, tgHandleStreamDataValueFunc, this);
-                ofLogVerbose() << "parser setup: " << parserInited;;
+                std::cout << "parser setup: " << parserInited;;
                 isReady = true;
-                ofLogVerbose() << "ThinkGear device setup";
+                std::cout << "Thinkgear device setup";
                 attempts = 0;
             }
             
@@ -256,7 +257,7 @@ void Thinkgear::update(){
         int n = device->available();
         if (n > 0){
             unavailableCount = 0;
-            n = device->readBytes(buffer, min(n,512));
+            n = device->readBytes(buffer, std::min(n,512));
             for (int i=0; i<n; ++i){
                 THINKGEAR_parseByte(&parser, buffer[i]);
             }
@@ -266,7 +267,7 @@ void Thinkgear::update(){
             // test by switching device off/on
             unavailableCount++;
             if(unavailableCount >  noDataRestartCount) {
-                ofLogVerbose() << "*** no data available - attempt to reconnect";
+                std::cout << "*** no data available - attempt to reconnect";
                 isReady = false;
                 attempts = 0;
                 unavailableCount = 0;
@@ -274,7 +275,7 @@ void Thinkgear::update(){
                 delete device;
                 device = NULL;
                 
-                ofSerial* retryDevice = new ofSerial();
+                SerialPort* retryDevice = new SerialPort();
                 device = retryDevice;
             }
         }

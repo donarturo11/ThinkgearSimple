@@ -1,8 +1,31 @@
 #pragma once
 
-#include "SerialPort.h"
+//#include "SerialPort.h"
 #include "ThinkGearStreamParser.h"
 #include "ThinkgearCommsDriver.h"
+#include <string>
+
+class SerialPort
+{
+public:
+    SerialPort(){}
+    ~SerialPort(){}
+    bool setup(std::string portName, int baudrate){ return true; }
+    void open(){}
+    void close(){}
+    void flush(){}
+    int available(){ return 0; }
+    long readBytes(unsigned char * buffer, size_t length){ return 0; }
+	long readBytes(char * buffer, size_t length){ return 0; }
+    int readByte(){ return 0; }
+    
+    long writeBytes(const unsigned char * buffer, size_t length){ return 0; }
+	long writeBytes(const char * buffer, size_t length){ return 0; }
+    bool writeByte(unsigned char singleByte){ return true; }
+	bool writeByte(char singleByte){ return true; }
+};
+
+class SerialPortInfo;
 
 /*
  ofxThinkgear
@@ -13,7 +36,7 @@
  */
 
 // comments: sample value / maximum
-class ThinkGearEventArgs {
+class ThinkgearEventArgs {
 public:
     short raw;
     unsigned char battery;
@@ -44,7 +67,7 @@ public:
  - TG_COMMS_DRIVER: Uses ThinkGear drivers which automatically connect to bluetooth devices.
  */
 
-enum ThinkGearImplementation {
+enum ThinkgearImplementation {
 	TG_STREAM_PARSER,
 	TG_COMMS_DRIVER
 };
@@ -52,10 +75,10 @@ enum ThinkGearImplementation {
 class Thinkgear {
 public:
     
-    string deviceName;
+    std::string deviceName;
     int baudRate;
-    ThinkGearImplementation connectionType;
-    void setup(string deviceName, int baudRate, ThinkGearImplementation connectionType = TG_STREAM_PARSER);
+    ThinkgearImplementation connectionType;
+    void setup(std::string deviceName, int baudRate, ThinkgearImplementation connectionType = TG_STREAM_PARSER);
     
     // lib callback
     void tgHandleCommsDriverDataValueFunc(int code, float value);
@@ -70,7 +93,7 @@ public:
     
     //bool notifyOnRaw;
     SerialPort* device;
-    //ofxThinkgearEventArgs values;
+    ThinkgearEventArgs values;
     bool isReady;
     /*
     ofEvent<ofxThinkgearEventArgs> onRaw;
@@ -84,8 +107,8 @@ public:
     ofEvent<ofxThinkgearEventArgs> onReady;
     ofEvent<ofMessage> onError;
     */
-    ThinkGear();
-    ~ThinkGear();
+    Thinkgear();
+    ~Thinkgear();
 
     void flush();
     void update();
