@@ -5,6 +5,8 @@
 #include "ThinkgearCommsDriver.h"
 #include <string>
 
+#define BUFFERSIZE 512
+
 /*
  ofxThinkgear
  - Original addon by Laurent Bedubourg <laurent@labe.me> https://github.com/labe-me/ofxThinkgear
@@ -85,7 +87,7 @@ public:
     ofEvent<ofxThinkgearEventArgs> onReady;
     ofEvent<ofMessage> onError;
     */
-    Thinkgear();
+    Thinkgear(SerialPortInterface* dev);
     ~Thinkgear();
 
     void flush();
@@ -127,6 +129,6 @@ private:
     ThinkgearCommsDriver driver;
 	#endif
     ThinkGearStreamParser parser;
-    unsigned char buffer[512];
+    unsigned char buffer[BUFFERSIZE];
 };
 

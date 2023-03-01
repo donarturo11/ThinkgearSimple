@@ -30,7 +30,7 @@ class Buffer;
 
 /// \brief Describes a Serial device, including ID, name and path.
 class SerialPortDeviceInfo{
-	friend class Serial;
+	friend class SerialPort;
 
 	public:
 		SerialPortDeviceInfo(std::string devicePathIn, std::string deviceNameIn, int deviceIDIn){

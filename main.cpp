@@ -1,8 +1,10 @@
 #include <iostream>
 #include "Thinkgear.h"
+#include "SerialPortInterface.h"
 
 int main()
 {
-    Thinkgear thinkgear;
+    SerialPortInterface* dev;
+    Thinkgear thinkgear(dev);
     return 0;
 }

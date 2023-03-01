@@ -156,8 +156,9 @@ void Thinkgear::tgHandleCommsDriverDataValueFunc(int code, float value) {
     }
 }
 
-Thinkgear::Thinkgear() : isReady(false) {
-    
+Thinkgear::Thinkgear(SerialPortInterface* dev) :
+           device(dev), isReady(false)
+{
     //device = new SerialPortInterface();
     // print all devices to console
     //device->listDevices();
@@ -214,7 +215,7 @@ void Thinkgear::idle() {
             int n = device->available();
             if (n > 0){
                 //unavailableCount = 0;
-                n = device->readBytes(buffer, std::min(n,512));
+                n = device->readBytes(buffer, std::min(n,BUFFERSIZE));
             }
         }
     }
@@ -239,7 +240,7 @@ void Thinkgear::update(){
         
     } else if(connectionType == TG_STREAM_PARSER) {
         
-        if (!isReady && 512 /* temporarly */ % noConnectionRestartCount == 0){
+        if (!isReady && BUFFERSIZE /* temporarly */ % noConnectionRestartCount == 0){
             std::cerr << "connecting to device...\n";
             attempts++;
             if (device->setup(deviceName, baudRate)){
@@ -257,7 +258,7 @@ void Thinkgear::update(){
         int n = device->available();
         if (n > 0){
             unavailableCount = 0;
-            n = device->readBytes(buffer, std::min(n,512));
+            n = device->readBytes(buffer, std::min(n,BUFFERSIZE));
             for (int i=0; i<n; ++i){
                 THINKGEAR_parseByte(&parser, buffer[i]);
             }
